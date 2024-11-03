@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import 'aos/dist/aos.css';
 import AOS from 'aos';
@@ -11,6 +12,7 @@ interface Playlist {
 
 const Playlists: React.FC = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     AOS.init({ duration: 1000 });// <--- this sets AOS with a 1 second duration
@@ -37,12 +39,19 @@ const Playlists: React.FC = () => {
   }, []);
   
 
+  const handlePlayListClick = (playlistId: string) => {
+    navigate(`/battle/${playlistId}`);
+  };
+
   return (
     <div className="p-4">
       <h1 data-aos="fadein" className="text-4xl font-bold mb-4 text-center font-montserrat">Your Playlists</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {playlists.map((playlist) => (
-          <div key={playlist.id} className="bg-gray-800 p-4 rounded-lg shadow-lg border-2 hover:border-red-500 hover:scale-105 transition-transform duration-300" data-aos="fade-up">
+          <div key={playlist.id} 
+          className="bg-gray-800 p-4 rounded-lg shadow-lg border-2 hover:border-red-500 hover:scale-105 transition-transform duration-300" 
+          data-aos="fade-up"
+          onClick={() => handlePlayListClick(playlist.id)}>
             {/* Check if the playlist has an image before rendering it */}
             {playlist.images && playlist.images.length > 0 && (
               <img

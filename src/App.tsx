@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-route
 import Landing from './components/landing';
 import Playlists from './components/Playlists';
 import { getSpotifyToken } from './spotifyAuth';
+import Battle from './components/Battle';
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const App: React.FC = () => {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/playlists" element={<Playlists />} />
+      <Route path="/battle/:playlistId" element={<Battle />} />
     </Routes>
   );
 };
