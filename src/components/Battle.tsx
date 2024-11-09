@@ -1,48 +1,62 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 interface Song {
   id: string;
   name: string;
+  preview_url: string; // Add the preview URL
   album: {
     name: string;
     images: { url: string }[];
   };
-  artists: { id: string; name: string }[]; // Add artists to display their names
+  artists: { id: string; name: string }[];
 }
 
 const Battle: React.FC = () => {
   const { playlistId } = useParams<{ playlistId: string }>();
+  const navigate = useNavigate();
   const [songs, setSongs] = useState<Song[]>([]);
   const [currentBattle, setCurrentBattle] = useState<[Song, Song] | null>(null);
-  const [winner, setWinner] = useState<Song | null>(null); // Tracks the winning song
+  const [winner, setWinner] = useState<Song | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetches 8 random songs from the specified playlist when the component mounts.
-  useEffect(() => {
-    const fetchSongs = async () => {
-      try {
-        const token = localStorage.getItem('spotifyAccessToken');
-        if (!token) {
-          console.warn("No Spotify token found in localStorage");
-          return;
-        }
+  const [playingSong, setPlayingSong] = useState<string | null>(null); // Track currently playing preview URL
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null); // Audio element for preview playback
 
-        // Fetch playlist data to get the total number of tracks
-        const playlistResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}`, {
+  // Fetch and select songs
+  const fetchAndSelectSongs = async () => {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("spotifyAccessToken");
+      if (!token) {
+        console.warn("No Spotify token found in localStorage");
+        setLoading(false);
+        return;
+      }
+
+      const playlistResponse = await axios.get(
+        `https://api.spotify.com/v1/playlists/${playlistId}`,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-        const totalTracks = playlistResponse.data.tracks.total;
+        }
+      );
+      const totalTracks = playlistResponse.data.tracks.total;
 
-        // Generate 8 random indices within the range of total tracks
-        const randomIndices = Array.from({ length: 8 }, () => Math.floor(Math.random() * totalTracks));
+      const randomIndices = Array.from(
+        { length: 8 },
+        () => Math.floor(Math.random() * totalTracks)
+      );
 
-        const selectedSongs: Song[] = [];
-        for (const index of randomIndices) {
-          const offset = Math.floor(index / 100) * 100; // Determine the page offset
-          const trackResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+      const selectedSongs: Song[] = [];
+      for (const index of randomIndices) {
+        const offset = Math.floor(index / 100) * 100;
+        const trackResponse = await axios.get(
+          `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+          {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -50,114 +64,161 @@ const Battle: React.FC = () => {
               offset,
               limit: 100,
             },
-          });
-
-          const trackWithinPage = index % 100;
-          const track = trackResponse.data.items[trackWithinPage].track;
-
-          // Avoid duplicates in the selected songs
-          if (!selectedSongs.find((song) => song.id === track.id)) {
-            selectedSongs.push(track);
           }
+        );
+
+        const trackWithinPage = index % 100;
+        const track = trackResponse.data.items[trackWithinPage].track;
+
+        if (track.preview_url && !selectedSongs.find((song) => song.id === track.id)) {
+          selectedSongs.push({
+            id: track.id,
+            name: track.name,
+            preview_url: track.preview_url, // Add preview URL for playback
+            album: track.album,
+            artists: track.artists,
+          });
         }
-
-        setSongs(selectedSongs);
-        setCurrentBattle([selectedSongs[0], selectedSongs[1]]); // Start the battle with the first two songs
-      } catch (error) {
-        console.error('Error fetching songs:', error);
       }
-    };
 
-    fetchSongs();
+      setSongs(selectedSongs);
+      setCurrentBattle([selectedSongs[0], selectedSongs[1]]);
+      setWinner(null);
+    } catch (error) {
+      console.error("Error fetching songs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAndSelectSongs();
   }, [playlistId]);
 
   // Handles the logic when a song is chosen in the battle.
   const handleSongChoice = (chosenSong: Song) => {
     if (!currentBattle) return;
 
-    // Identify which side the chosen song is on (left or right)
     const [leftSong, rightSong] = currentBattle;
-    const chosenSide = chosenSong === leftSong ? 'left' : 'right';
+    const chosenSide = chosenSong === leftSong ? "left" : "right";
 
-    // Filter out the song that wasn't chosen
-    const otherSong = chosenSide === 'left' ? rightSong : leftSong;
+    const otherSong = chosenSide === "left" ? rightSong : leftSong;
     setSongs((prevSongs) => prevSongs.filter((song) => song.id !== otherSong.id));
 
-    // Update the current battle or set the winner
     setSongs((prevSongs) => {
-      // Remove the next song if it matches the chosen song (to prevent duplicates)
       const filteredSongs = prevSongs.filter((song) => song.id !== chosenSong.id);
 
       if (filteredSongs.length > 0) {
-        const nextSong = filteredSongs[0]; // The next song to introduce into the battle
-
-        // Determine new battle based on chosen side
-        const newBattle: [Song, Song] = chosenSide === 'left'
-          ? [chosenSong, nextSong] // Keep chosen song on left, replace right
-          : [nextSong, chosenSong]; // Keep chosen song on right, replace left
-
+        const nextSong = filteredSongs[0];
+        const newBattle: [Song, Song] = chosenSide === "left" ? [chosenSong, nextSong] : [nextSong, chosenSong];
         setCurrentBattle(newBattle);
-        return filteredSongs.slice(1); // Remove the next song from the pool
+        return filteredSongs.slice(1);
       } else {
-        setWinner(chosenSong); // Set the chosen song as the winner
-        setCurrentBattle(null); // Clear the current battle
+        setWinner(chosenSong);
+        setCurrentBattle(null);
         return filteredSongs;
       }
     });
   };
 
+  // Toggle play/pause for a song preview
+  const togglePlay = (preview_url: string) => {
+    if (playingSong === preview_url) {
+      // Pause playback
+      audioElement?.pause();
+      setPlayingSong(null);
+    } else {
+      // Play a new preview
+      const audio = new Audio(preview_url);
+      setAudioElement(audio);
+      setPlayingSong(preview_url);
+
+      audio.play();
+      audio.onended = () => {
+        setPlayingSong(null); // Reset when the preview ends
+      };
+    }
+  };
+
+  // Logic for the "Play Again" button
+  const handlePlayAgain = () => {
+    fetchAndSelectSongs();
+  };
+
+  // Logic for the "Home" button
+  const handleHome = () => {
+    navigate("/playlists");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-800">
+        <h1 className="text-4xl font-bold text-center font-montserrat text-white">Loading...</h1>
+        <svg
+          className="animate-spin h-12 w-12 text-white mb-4 mt-4"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          ></path>
+        </svg>
+      </div>
+    );
+  }
+
   if (winner) {
-    // Render the winner screen
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-800 text-white">
         <h1 className="text-4xl font-bold mb-6">Winner!</h1>
         <img
-          src={winner.album.images[0]?.url || ''}
+          src={winner.album.images[0]?.url || ""}
           alt={winner.name}
           className="w-64 h-64 object-cover rounded-lg mb-4"
         />
         <h2 className="text-2xl font-bold">{winner.name}</h2>
         <p className="text-lg">{winner.album.name}</p>
         <p className="text-md text-gray-400">
-          {winner.artists.map((artist) => artist.name).join(', ')} {/* Display artists */}
+          {winner.artists.map((artist) => artist.name).join(", ")}
         </p>
+        <button
+          onClick={handlePlayAgain}
+          className="bg-gray-600 text-white font-semibold mt-4 py-2 px-4 rounded-lg hover:bg-slate-200 transition-colors duration-300"
+        >
+          Play Again
+        </button>
+        <button
+          onClick={handleHome}
+          className="bg-blue-500 text-white font-semibold mt-4 py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300"
+        >
+          Home
+        </button>
       </div>
     );
   }
 
-  if (!currentBattle) {
-    // Render the loading screen
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-800">
-        <h1 className="text-4xl font-bold text-center font-montserrat text-white">Loading...</h1>
-        <svg className="animate-spin h-12 w-12 text-white mb-4 mt-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-      </div>
-    );
-  }
-
-  // Render the current battle
   return (
     <div className="flex items-center justify-center h-screen bg-gray-800 text-white">
       {currentBattle && currentBattle.length === 2 ? (
         <div className="flex w-full max-w-4xl justify-around">
-          {currentBattle.map((song, index) => (
+          {currentBattle.map((song) => (
             <div key={song.id} className="flex flex-col items-center">
               <img
-                src={song.album.images[0]?.url || ''}
+                src={song.album.images[0]?.url || ""}
                 alt={song.name}
                 className="w-48 h-48 object-cover mb-4"
               />
               <h2 className="text-xl font-bold text-center">{song.name}</h2>
               <p className="text-center">{song.album.name}</p>
-              <p className="text-sm text-gray-400">
-                {song.artists.map((artist) => artist.name).join(', ')}
-              </p>
+              <p className="text-sm text-gray-400">{song.artists.map((artist) => artist.name).join(", ")}</p>
+              <audio controls src={song.preview_url} className="mt-2 w-48"></audio>
               <button
                 onClick={() => handleSongChoice(song)}
-                className="bg-blue-500 text-white mt-4 px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
+                className="bg-blue-500 text-white mt-4 px-4 py-2 rounded-lg hover:bg-blue-300 transition duration-300"
               >
                 Choose
               </button>
