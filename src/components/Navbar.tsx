@@ -29,7 +29,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSignOut }) => {
         </div>
 
         {/* Center Section - Title */}
-        <div className="text-4xl font-bold hover:text-gray-300 cursor-pointer">
+        <div className="absolute left-1/2 transform -translate-x-1/2 text-4xl font-bold hover:text-gray-300 cursor-pointer">
           <h1 onClick={() => navigate("/playlists")}>Song Battle</h1>
         </div>
 
