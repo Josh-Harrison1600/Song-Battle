@@ -5,7 +5,7 @@ import axios from "axios";
 interface Song {
   id: string;
   name: string;
-  preview_url: string; // Add the preview URL
+  preview_url: string;
   album: {
     name: string;
     images: { url: string }[];
@@ -13,7 +13,11 @@ interface Song {
   artists: { id: string; name: string }[];
 }
 
-const Battle: React.FC = () => {
+interface BattleProps {
+  setGlobalLoading: (isLoading: boolean) => void; // Accept global loading setter
+}
+
+const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
   const { playlistId } = useParams<{ playlistId: string }>();
   const navigate = useNavigate();
   const [songs, setSongs] = useState<Song[]>([]);
@@ -28,11 +32,13 @@ const Battle: React.FC = () => {
   const fetchAndSelectSongs = async () => {
     try {
       setLoading(true);
+      setGlobalLoading(true); // Synchronize global loading
 
       const token = localStorage.getItem("spotifyAccessToken");
       if (!token) {
         console.warn("No Spotify token found in localStorage");
         setLoading(false);
+        setGlobalLoading(false);
         return;
       }
 
@@ -88,6 +94,7 @@ const Battle: React.FC = () => {
       console.error("Error fetching songs:", error);
     } finally {
       setLoading(false);
+      setGlobalLoading(false); // Reset global loading
     }
   };
 
@@ -160,7 +167,14 @@ const Battle: React.FC = () => {
           fill="none"
           viewBox="0 0 24 24"
         >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
           <path
             className="opacity-75"
             fill="currentColor"
