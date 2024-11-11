@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Footer from "./Footer";
 
 interface Song {
   id: string;
@@ -105,6 +106,20 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
     fetchAndSelectSongs();
   }, [playlistId]);
 
+
+  //this prevents scrolling
+  useEffect(() => {
+    if (loading || winner || currentBattle) {
+      document.body.style.overflow = "hidden"; 
+    } else {
+      document.body.style.overflow = "auto"; 
+    }
+  
+    return () => {
+      document.body.style.overflow = "auto"; 
+    };
+  }, [loading, winner, currentBattle]);
+
   // Handles the logic when a song is chosen in the battle.
   const handleSongChoice = (chosenSong: Song) => {
     if (!currentBattle) return;
@@ -187,7 +202,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
 
   if (winner) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-800 text-white">
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-800 text-white overflow-hidden">
         <h1 className="text-4xl font-bold mb-6">Winner!</h1>
         <img
           src={winner.album.images[0]?.url || ""}
@@ -211,12 +226,13 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
         >
           Home
         </button>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-800 text-white">
+    <div className="flex items-center justify-center h-screen bg-gray-800 text-white overflow-hidden">
       {currentBattle && currentBattle.length === 2 ? (
         <div className="flex w-full max-w-4xl justify-around">
           {currentBattle.map((song, index) => (
@@ -246,6 +262,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
           ))}
         </div>
       ) : null}
+      <Footer />
     </div>
   );
 };

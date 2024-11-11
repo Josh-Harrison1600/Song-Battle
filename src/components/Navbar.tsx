@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import Playlists from "./Playlists";
 
 interface NavbarProps {
   onSignOut: () => void;
@@ -15,21 +16,21 @@ const Navbar: React.FC<NavbarProps> = ({ onSignOut }) => {
         <div className="flex space-x-4">
           <button
             onClick={() => navigate("/playlists")}
-            className="hover:text-gray-300"
+            className="font-roboto text-xl hover:text-gray-300"
           >
             Home
           </button>
           <button
             onClick={() => navigate("/about")}
-            className="hover:text-gray-300"
+            className="font-roboto text-xl hover:text-gray-300"
           >
             About
           </button>
         </div>
 
         {/* Center Section - Title */}
-        <div className="text-lg font-bold">
-          <h1>Song Battle</h1>
+        <div className="text-4xl font-bold hover:text-gray-300 cursor-pointer">
+          <h1 onClick={() => navigate("/playlists")}>Song Battle</h1>
         </div>
 
         {/* Right Section - Sign Out Button */}
