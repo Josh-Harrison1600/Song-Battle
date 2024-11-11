@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -14,7 +14,7 @@ interface Song {
 }
 
 interface BattleProps {
-  setGlobalLoading: (isLoading: boolean) => void; // Accept global loading setter
+  setGlobalLoading: (isLoading: boolean) => void;
 }
 
 const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
@@ -25,8 +25,11 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
   const [winner, setWinner] = useState<Song | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [playingSong, setPlayingSong] = useState<string | null>(null); // Track currently playing preview URL
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null); // Audio element for preview playback
+  const [playingSong, setPlayingSong] = useState<string | null>(null); 
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null); 
+
+  // Refs for managing audio elements
+  const audioRefs = useRef<HTMLAudioElement[]>([]);
 
   // Fetch and select songs
   const fetchAndSelectSongs = async () => {
@@ -80,7 +83,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
           selectedSongs.push({
             id: track.id,
             name: track.name,
-            preview_url: track.preview_url, // Add preview URL for playback
+            preview_url: track.preview_url,
             album: track.album,
             artists: track.artists,
           });
@@ -94,7 +97,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
       console.error("Error fetching songs:", error);
     } finally {
       setLoading(false);
-      setGlobalLoading(false); // Reset global loading
+      setGlobalLoading(false); 
     }
   };
 
@@ -128,22 +131,19 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
     });
   };
 
-  // Toggle play/pause for a song preview
-  const togglePlay = (preview_url: string) => {
-    if (playingSong === preview_url) {
-      // Pause playback
-      audioElement?.pause();
-      setPlayingSong(null);
-    } else {
-      // Play a new preview
-      const audio = new Audio(preview_url);
-      setAudioElement(audio);
-      setPlayingSong(preview_url);
+  // Manage audio playback to prevent overlap
+  const handlePlay = (index: number) => {
+    // Pause all other audio elements
+    audioRefs.current.forEach((audio, i) => {
+      if (audio && i !== index) {
+        audio.pause();
+        audio.currentTime = 0; 
+      }
+    });
 
-      audio.play();
-      audio.onended = () => {
-        setPlayingSong(null); // Reset when the preview ends
-      };
+    // Play the selected audio
+    if (audioRefs.current[index]) {
+      audioRefs.current[index].play();
     }
   };
 
@@ -219,7 +219,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
     <div className="flex items-center justify-center h-screen bg-gray-800 text-white">
       {currentBattle && currentBattle.length === 2 ? (
         <div className="flex w-full max-w-4xl justify-around">
-          {currentBattle.map((song) => (
+          {currentBattle.map((song, index) => (
             <div key={song.id} className="flex flex-col items-center">
               <img
                 src={song.album.images[0]?.url || ""}
@@ -229,7 +229,13 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
               <h2 className="text-xl font-bold text-center">{song.name}</h2>
               <p className="text-center">{song.album.name}</p>
               <p className="text-sm text-gray-400">{song.artists.map((artist) => artist.name).join(", ")}</p>
-              <audio controls src={song.preview_url} className="mt-2 w-48"></audio>
+              <audio
+                ref={(el) => (audioRefs.current[index] = el!)}
+                controls
+                src={song.preview_url}
+                className="mt-2 w-48"
+                onPlay={() => handlePlay(index)}
+              />
               <button
                 onClick={() => handleSongChoice(song)}
                 className="bg-blue-500 text-white mt-4 px-4 py-2 rounded-lg hover:bg-blue-300 transition duration-300"
