@@ -3,6 +3,8 @@ import { loginURL } from '../spotifyAuth';
 import battleIMG from './images/landingIMG.png';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import SpotifyLogo from './images/spotify.png';
+
 
 const Landing: React.FC = () => {
   useEffect(() => {
@@ -20,7 +22,7 @@ const Landing: React.FC = () => {
         data-aos="fade-up"
         data-aos-delay="300"
       >
-        Song Battle
+        Song <a className='text-green-500'>Battle</a>
       </h1>
 
       {/* Content Sectionn */}
@@ -69,10 +71,15 @@ const Landing: React.FC = () => {
 
       <a
         href={loginURL}
-        className="bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-105 shadow-md font-inter z-10"
+        className="bg-green-500 text-black font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-105 shadow-md font-inter z-10 flex items-center justify-center gap-3"
         data-aos="fade-up"
         data-aos-delay="1300"
       >
+        <img
+          src={SpotifyLogo}
+          alt = "Spotify Logo"
+          className='w-6 sh-6'
+        />
         Login with Spotify
       </a>
 

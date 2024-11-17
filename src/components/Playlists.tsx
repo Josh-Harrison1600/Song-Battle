@@ -50,7 +50,7 @@ const Playlists: React.FC = () => {
             key={playlist.id}
             onClick={() => handlePlayListClick(playlist.id)}
             className="bg-gray-900 p-4 rounded-lg shadow-lg border-2 border-white 
-                       transition-colors duration-500 ease-in-out hover:border-red-500 hover:bg-black"
+                       transition-colors duration-500 ease-in-out hover:border-green-500 hover:bg-black"
           >
             {playlist.images && playlist.images.length > 0 && (
               <img

@@ -2,8 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Footer from "./Footer";
-import AOS from 'aos';
-import 'aos/dist/aos.css';
 
 interface Song {
   id: string;
@@ -202,69 +200,40 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
     );
   }
 
-if (winner) {
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-800 text-white overflow-hidden">
-      <h1
-        className="text-4xl font-bold mb-6"
-        data-aos="fade-up"
-        data-aos-delay="100"
-      >
-        Winner!
-      </h1>
-      <img
-        src={winner.album.images[0]?.url || ""}
-        alt={winner.name}
-        className="w-64 h-64 object-cover rounded-lg mb-4"
-        data-aos="fade-up"
-        data-aos-delay="200"
-      />
-      <h2
-        className="text-2xl font-bold"
-        data-aos="fade-up"
-        data-aos-delay="300"
-      >
-        {winner.name}
-      </h2>
-      <p
-        className="text-lg"
-        data-aos="fade-up"
-        data-aos-delay="400"
-      >
-        {winner.album.name}
-      </p>
-      <p
-        className="text-md text-gray-400"
-        data-aos="fade-up"
-        data-aos-delay="500"
-      >
-        {winner.artists.map((artist) => artist.name).join(", ")}
-      </p>
-      <button
-        onClick={handlePlayAgain}
-        className="bg-gray-600 text-white font-semibold mt-4 py-2 px-4 rounded-lg hover:bg-slate-200 transition-colors duration-300"
-        data-aos="fade-up"
-        data-aos-delay="600"
-      >
-        Play Again
-      </button>
-      <button
-        onClick={handleHome}
-        className="bg-blue-500 text-white font-semibold mt-4 py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300"
-        data-aos="fade-up"
-        data-aos-delay="700"
-      >
-        Home
-      </button>
-      <Footer />
-    </div>
-  );
-}
-
+  if (winner) {
+    return (
+      <div className="flex flex-col items-center justify-start h-screen bg-gray-800 text-white overflow-hidden pt-28">
+        <h1 className="text-4xl font-bold mb-6">Winner!</h1>
+        <img
+          src={winner.album.images[0]?.url || ""}
+          alt={winner.name}
+          className="w-64 h-64 object-cover rounded-lg mb-4"
+        />
+        <h2 className="text-2xl font-bold">{winner.name}</h2>
+        <p className="text-lg">{winner.album.name}</p>
+        <p className="text-md text-gray-400">
+          {winner.artists.map((artist) => artist.name).join(", ")}
+        </p>
+        <button
+          onClick={handlePlayAgain}
+          className="bg-green-500 text-white font-semibold mt-4 py-2 px-4 rounded-lg hover:bg-green-600 hover:text-black transition-colors duration-300"
+        >
+          Play Again
+        </button>
+        <button
+          onClick={handleHome}
+          className="bg-blue-600 text-white font-semibold mt-4 py-2 px-4 rounded-lg hover:bg-blue-700 hover:text-black transition-colors duration-300"
+        >
+          Home
+        </button>
+        <Footer />
+      </div>
+    );
+  }
   
-
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-800 text-white overflow-hidden">
+    <div className="flex flex-col items-center justify-start h-screen bg-gray-800 text-white overflow-hidden">
+      <div className="h-48"></div> {/* Spacer div to add vertical space */}
       {currentBattle && currentBattle.length === 2 ? (
         <div className="flex w-full max-w-4xl justify-around">
           {currentBattle.map((song, index) => (
@@ -286,7 +255,7 @@ if (winner) {
               />
               <button
                 onClick={() => handleSongChoice(song)}
-                className="bg-blue-500 text-white mt-4 px-4 py-2 rounded-lg hover:bg-blue-300 transition duration-300"
+                className="bg-green-500 text-white mt-4 px-4 py-2 rounded-lg hover:bg-green-600 hover:text-black transition duration-300"
               >
                 Choose
               </button>
