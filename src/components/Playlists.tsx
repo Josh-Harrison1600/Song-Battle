@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getSpotifyToken, loginURL } from '../spotifyAuth';
 
 interface Playlist {
   id: string;
@@ -14,30 +15,38 @@ const Playlists: React.FC = () => {
 
   useEffect(() => {
     const fetchPlaylists = async () => {
+      const token = getSpotifyToken();
+      if (!token) {
+        console.warn("No Spotify token found. Redirecting to login...");
+        window.location.href = loginURL; // Redirect to Spotify login
+        return;
+      }
+  
       try {
-        const token = localStorage.getItem('spotifyAccessToken');
-        if (!token) {
-          console.warn('No Spotify token found in localStorage');
-          return;
-        }
-
-        const response = await axios.get('https://api.spotify.com/v1/me/playlists', {
+        const response = await axios.get("https://api.spotify.com/v1/me/playlists", {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
           },
         });
+  
         if (response.data.items) {
           setPlaylists(response.data.items);
         } else {
           console.warn("No playlists returned from API.");
         }
       } catch (error) {
-        console.error('Error fetching playlists:', error);
+        console.error("Error fetching playlists:", error);
+        alert("Your session has expired. Please log in again.");
+        localStorage.removeItem("spotifyAccessToken");
+        window.location.href = loginURL;
       }
     };
-
+  
     fetchPlaylists();
   }, []);
+  
 
   const handlePlayListClick = (playlistId: string) => {
     navigate(`/battle/${playlistId}`);

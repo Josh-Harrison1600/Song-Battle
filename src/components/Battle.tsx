@@ -34,7 +34,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
     try {
       setLoading(true);
       setGlobalLoading(true); // Synchronize global loading
-
+  
       const token = localStorage.getItem("spotifyAccessToken");
       if (!token) {
         console.warn("No Spotify token found in localStorage");
@@ -42,30 +42,32 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
         setGlobalLoading(false);
         return;
       }
-
+  
       const playlistResponse = await axios.get(
         `https://api.spotify.com/v1/playlists/${playlistId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Cache-Control": "no-cache", // Force fresh data
+            Pragma: "no-cache",
           },
         }
       );
       const totalTracks = playlistResponse.data.tracks?.total || 0;
-
+  
       if (totalTracks === 0) {
         console.warn("No tracks found in playlist");
         setLoading(false);
         setGlobalLoading(false);
         return;
       }
-
+  
       // Generate random indices, ensuring they are within bounds
       const randomIndices = Array.from(
         { length: 8 },
         () => Math.floor(Math.random() * totalTracks)
       );
-
+  
       const selectedSongs: Song[] = [];
       for (const index of randomIndices) {
         const offset = Math.floor(index / 100) * 100;
@@ -74,6 +76,8 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              "Cache-Control": "no-cache", // Prevent caching
+              Pragma: "no-cache",
             },
             params: {
               offset,
@@ -81,14 +85,14 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
             },
           }
         );
-
+  
         const items = trackResponse.data?.items || [];
         const trackWithinPage = index % 100;
-
+  
         // Validate if track exists before accessing
         if (items[trackWithinPage]?.track?.preview_url) {
           const track = items[trackWithinPage].track;
-
+  
           if (!selectedSongs.find((song) => song.id === track.id)) {
             selectedSongs.push({
               id: track.id,
@@ -100,7 +104,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
           }
         }
       }
-
+  
       // Ensure at least two songs are available
       if (selectedSongs.length >= 2) {
         setSongs(selectedSongs);
@@ -115,6 +119,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
       setGlobalLoading(false);
     }
   };
+  
 
   useEffect(() => {
     if (!playlistId) {
