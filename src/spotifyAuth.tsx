@@ -1,7 +1,7 @@
 // src/spotifyAuth.ts
 
 const clientID: string = process.env.REACT_APP_SPOTIFY_CLIENT_ID || '';
-const redirectURI: string = process.env.REACT_APP_REDIRECT_URI || 'http://localhost:3000/callback';
+const redirectURI: string = process.env.REACT_APP_REDIRECT_URI || "https://song-battle-16e7.vercel.app/callback";
 const authEndpoint: string = 'https://accounts.spotify.com/authorize';
 
 // Spotify scopes required for accessing playlists and user library
