@@ -26,7 +26,11 @@ const Playlists: React.FC = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setPlaylists(response.data.items);
+        if (response.data.items) {
+          setPlaylists(response.data.items);
+        } else {
+          console.warn("No playlists returned from API.");
+        }
       } catch (error) {
         console.error('Error fetching playlists:', error);
       }

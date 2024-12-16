@@ -26,10 +26,6 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
   const [winner, setWinner] = useState<Song | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [playingSong, setPlayingSong] = useState<string | null>(null); 
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null); 
-
-  // Refs for managing audio elements
   const audioRefs = useRef<HTMLAudioElement[]>([]);
 
   // Fetch and select songs
@@ -54,8 +50,16 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
           },
         }
       );
-      const totalTracks = playlistResponse.data.tracks.total;
+      const totalTracks = playlistResponse.data.tracks?.total || 0;
 
+      if (totalTracks === 0) {
+        console.warn("No tracks found in playlist");
+        setLoading(false);
+        setGlobalLoading(false);
+        return;
+      }
+
+      // Generate random indices, ensuring they are within bounds
       const randomIndices = Array.from(
         { length: 8 },
         () => Math.floor(Math.random() * totalTracks)
@@ -77,46 +81,60 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
           }
         );
 
+        const items = trackResponse.data?.items || [];
         const trackWithinPage = index % 100;
-        const track = trackResponse.data.items[trackWithinPage].track;
 
-        if (track.preview_url && !selectedSongs.find((song) => song.id === track.id)) {
-          selectedSongs.push({
-            id: track.id,
-            name: track.name,
-            preview_url: track.preview_url,
-            album: track.album,
-            artists: track.artists,
-          });
+        // Validate if track exists before accessing
+        if (items[trackWithinPage]?.track?.preview_url) {
+          const track = items[trackWithinPage].track;
+
+          if (!selectedSongs.find((song) => song.id === track.id)) {
+            selectedSongs.push({
+              id: track.id,
+              name: track.name,
+              preview_url: track.preview_url,
+              album: track.album,
+              artists: track.artists,
+            });
+          }
         }
       }
 
-      setSongs(selectedSongs);
-      setCurrentBattle([selectedSongs[0], selectedSongs[1]]);
-      setWinner(null);
+      // Ensure at least two songs are available
+      if (selectedSongs.length >= 2) {
+        setSongs(selectedSongs);
+        setCurrentBattle([selectedSongs[0], selectedSongs[1]]);
+      } else {
+        console.warn("Not enough valid songs found for the battle.");
+      }
     } catch (error) {
       console.error("Error fetching songs:", error);
     } finally {
       setLoading(false);
-      setGlobalLoading(false); 
+      setGlobalLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!playlistId) {
+      console.error("No playlistId provided in route");
+      navigate("/playlists");
+      return;
+    }
+
     fetchAndSelectSongs();
   }, [playlistId]);
-
 
   //this prevents scrolling
   useEffect(() => {
     if (loading || winner || currentBattle) {
-      document.body.style.overflow = "hidden"; 
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "auto"; 
+      document.body.style.overflow = "auto";
     }
-  
+
     return () => {
-      document.body.style.overflow = "auto"; 
+      document.body.style.overflow = "auto";
     };
   }, [loading, winner, currentBattle]);
 
@@ -128,6 +146,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
     const chosenSide = chosenSong === leftSong ? "left" : "right";
 
     const otherSong = chosenSide === "left" ? rightSong : leftSong;
+
     setSongs((prevSongs) => prevSongs.filter((song) => song.id !== otherSong.id));
 
     setSongs((prevSongs) => {
@@ -152,7 +171,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
     audioRefs.current.forEach((audio, i) => {
       if (audio && i !== index) {
         audio.pause();
-        audio.currentTime = 0; 
+        audio.currentTime = 0;
       }
     });
 
@@ -230,22 +249,24 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
       </div>
     );
   }
-  
+
   return (
     <div className="flex flex-col items-center justify-start h-screen bg-gray-800 text-white overflow-hidden">
       <div className="h-48"></div> {/* Spacer div to add vertical space */}
-      {currentBattle && currentBattle.length === 2 ? (
+      {currentBattle?.length === 2 ? (
         <div className="flex w-full max-w-4xl justify-around">
           {currentBattle.map((song, index) => (
             <div key={song.id} className="flex flex-col items-center">
               <img
-                src={song.album.images[0]?.url || ""}
+                src={song.album?.images?.[0]?.url || ""}
                 alt={song.name}
                 className="w-48 h-48 object-cover mb-4"
               />
               <h2 className="text-xl font-bold text-center">{song.name}</h2>
               <p className="text-center">{song.album.name}</p>
-              <p className="text-sm text-gray-400">{song.artists.map((artist) => artist.name).join(", ")}</p>
+              <p className="text-sm text-gray-400">
+                {song.artists.map((artist) => artist.name).join(", ")}
+              </p>
               <audio
                 ref={(el) => (audioRefs.current[index] = el!)}
                 controls
