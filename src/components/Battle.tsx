@@ -29,6 +29,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
   const audioRefs = useRef<HTMLAudioElement[]>([]);
 
   // Fetch and select songs
+
   const fetchAndSelectSongs = async () => {
     try {
       setLoading(true);

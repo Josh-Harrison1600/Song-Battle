@@ -7,8 +7,10 @@ const authEndpoint: string = 'https://accounts.spotify.com/authorize';
 const scopes: string[] = [
   'user-read-private',
   'playlist-read-private',
+  'playlist-read-collaborative',
   'user-library-read',
 ];
+
 
 export const loginURL: string = `${authEndpoint}?client_id=${clientID}&redirect_uri=${redirectURI}&scope=${scopes.join(
   '%20'
