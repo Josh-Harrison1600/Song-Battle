@@ -44,7 +44,7 @@ const Battle: React.FC<BattleProps> = ({ setGlobalLoading }) => {
       }
   
       const playlistResponse = await axios.get(
-        `https://api.spotify.com/v1/playlists/${playlistId}`,
+        `http://localhost:5000/spotify/playlists/${playlistId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
